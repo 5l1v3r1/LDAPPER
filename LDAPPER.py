@@ -2,8 +2,8 @@
  # -*- coding: utf-8 -*-
 
 from __future__ import print_function
-import ldap3, argparse, sys, yaml, re, json, time, colorama, os
-import datetime, time
+import ldap3, argparse, sys, yaml, re, json, time, colorama
+import datetime
 
 #Python 2 hack to force utf8 encoding
 if sys.version_info[0] == 2:
@@ -16,39 +16,184 @@ def ldap_time_stamp(dt):
     MagicNumber = 116444736000000000
     return str(int(time.mktime(dt.timetuple()) *10000000) + MagicNumber)
 
-epilog = os.linesep.join([
-    'Custom Searches:',
-    '\t  1) Get all users',
-    '\t  2) Get all groups (and their members)',
-    '\t  3) Get all printers',
-    '\t  4) Get all computers',
-    '\t  5) Search for Unconstrained SPN Delegations (Potential Priv-Esc)',
-    '\t  6) Search for Accounts where PreAuth is not required. (ASREPROAST)',
-    '\t  7) All User SPNs (KERBEROAST)',
-    '\t *8) Show All LAPS LA Passwords (that you can see)',
-    '\t  9) Show All Quest Two-Factor Seeds (if you have access)',
-    '\t 10) Oracle "orclCommonAttribute" SSO password hash',
-    '\t*11) Oracle "userPassword" SSO password hash' 
-    '\n',
-    'Starred items have never been tested in an environment where they could be verified, so please let me know if they work.'
-])
-
-    
 custom_search = [
-    ['(objectcategory=user)', 'cn', 'mail', 'memberOf', 'sAMAccountName'], #Users
-    ['(objectclass=group)', 'member'], #Groups
-    ['(objectCategory=printeQueue)'], #Printers
-    ['(&(objectCategory=computer)(lastLogonTimestamp>=' + ldap_time_stamp(datetime.datetime.today() - datetime.timedelta(days=90)) + '))', 'dNSHostName', 'description', 'operatingSystem', 'operatingSystemServicePack', 'operatingSystemVersion', 'servicePrincipalName', 'lastLogonTimestamp'], #Computers
-    ['(userAccountControl:1.2.840.113556.1.4.803:=524288)', 'cn', 'servicePrincipalName'], #Unconstrained Delegation
-    ['(userAccountControl:1.2.840.113556.1.4.803:=4194304)', 'cn', 'distinguishedName'], #PreAuth Not Required
-    ['(&(objectcategory=user)(serviceprincipalname=*))', 'userPrincipalName', 'servicePrincipalName'], #User SPNs
-    ['(ms-Mcs-AdmPwd=*)', 'ms-Mcs-AdmPwd', 'ms-Mcs-AdmPwdExpirationTime'], #LAPS LA Passwords
-    ['(defender-tokenData=*)'], #Defender Token Data
-    ['(&(objectcategory=user)(orclCommonAttribute=*))', 'cn', 'memberOf', 'sAMAccountName', 'orclCommonAttribute'], #orclCommonAttribute SSO hash1
-    ['(&(objectcategory=user)(userPassword=*))', 'cn', 'memberOf', 'sAMAccountName', 'userPassword'], #Oracle userPassword SSO hash2
+    {
+     'help': 'Get all users',
+     'ldap': '(objectcategory=user)', 
+     'filter': ['cn', 'description', 'mail', 'memberOf', 'sAMAccountName'],
+     'children': [
+        {
+         'help': 'Get specific user (You will be prompted for the username)',
+         'ldap': '(&(objectclass=user)(|(CN={0})(sAMAccountName={0})))', 
+         'filter': ['cn', 'description', 'mail', 'memberOf', 'sAMAccountName'],
+         'options': [
+            {
+                'question': 'Username to search for',
+                'regex': '.+'
+            }
+          ]
+        }
+     ]
+    },
+    {
+     'help': 'Get all groups (and their members)',
+     'ldap': '(objectclass=group)', 
+     'filter': ['member', 'displayName'],
+     'children': [
+        {
+         'help': 'Get specific group (You will be prompted for the group name)',
+         'ldap': '(&(objectclass=group)(|(CN={0})(sAMAccountName={0})))', 
+         'filter': ['member', 'displayName'],
+         'options': [
+            {
+                'question': 'Group name to search for',
+                'regex': '.+'
+            }
+          ]
+        }
+     ]
+    },
+    {
+     'help': 'Get all printers',
+     'ldap': '(objectCategory=printeQueue)',
+    },
+    {
+     'help': 'Get all computers',
+     'ldap': '(&(objectCategory=computer)(lastLogonTimestamp>=' + ldap_time_stamp(datetime.datetime.today() - datetime.timedelta(days=90)) + '))', 
+     'filter': ['dNSHostName', 'description', 'operatingSystem', 'operatingSystemServicePack', 'operatingSystemVersion', 'servicePrincipalName', 'lastLogonTimestamp'],
+     'children': [
+        {
+         'help': 'Get specific computer (You will be prompted for the group name)',
+         'ldap': '(&(objectCategory=computer)(lastLogonTimestamp>=' + ldap_time_stamp(datetime.datetime.today() - datetime.timedelta(days=90)) + ')(|(CN={0})(dNSHostName={0})))', 
+         'filter': ['dNSHostName', 'description', 'operatingSystem', 'operatingSystemServicePack', 'operatingSystemVersion', 'servicePrincipalName', 'lastLogonTimestamp'],
+         'options': [
+            {
+                'question': 'Computer name to search for',
+                'regex': '([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)+'
+            }
+          ]
+        }
+     ]
+    },
+    {
+     'help': 'Get Domain/Enterprise Administrators',
+     'ldap': '(&(objectCategory=group)(|(CN=Domain Admins)(CN=Administrators)(CN=Enterprise Admins)))',
+     'filter': ['member']
+    },
+    {
+     'help': 'Search for Unconstrained SPN Delegations (Potential Priv-Esc)',
+     'ldap': '(userAccountControl:1.2.840.113556.1.4.803:=524288)',
+     'filter': ['cn', 'servicePrincipalName']
+    },
+    {
+     'help': 'Search for Accounts where PreAuth is not required. (ASREPROAST)',
+     'ldap': '(userAccountControl:1.2.840.113556.1.4.803:=4194304)',
+     'filter': ['cn', 'distinguishedName']
+    },
+    {
+     'help': 'Search for User SPNs (KERBEROAST)',
+     'ldap': '(&(objectcategory=user)(serviceprincipalname=*))',
+     'filter': ['userPrincipalName', 'servicePrincipalName']
+    },
+    {
+     'help': 'Show All LAPS LA Passwords (that you can see)',
+     'ldap': '(ms-Mcs-AdmPwd=*)',
+     'filter': ['ms-Mcs-AdmPwd', 'ms-Mcs-AdmPwdExpirationTime'],
+     'untested': True
+    },
+    {
+     'help': 'Show All Quest Two-Factor Seeds (if you have access)',
+     'ldap': '(defender-tokenData=*)'
+    }, 
+    {
+     'help': 'Oracle "orclCommonAttribute" SSO password hash',
+     'ldap': '(&(objectcategory=user)(orclCommonAttribute=*))',
+     'filter': ['cn', 'memberOf', 'sAMAccountName', 'orclCommonAttribute']
+    },
+    {
+     'help': 'Oracle "userPassword" SSO password hash',
+     'ldap': '(&(objectcategory=user)(userPassword=*))',
+     'filter': ['cn', 'memberOf', 'sAMAccountName', 'userPassword'],
+     'untested': True
+    }
 ]
 
-parser = argparse.ArgumentParser(description="AD LDAP Command Line Searching that doesn't suck.", epilog=epilog, formatter_class=argparse.RawTextHelpFormatter)
+def escape_ldap(term):
+    term = re.sub(r'([,#+><;"=])', r'\\\1', term.replace('\\', '\\\\'))
+    
+    m1 = re.search('^([ ]+)', term)
+    m2 = re.search('([ ]+)$', term)
+    
+    term = term.strip()
+    
+    if m1 and m1.group(1):
+        term = (len(m1.group(1)) * '\\ ') + term
+        
+    if m2 and m2.group(1):
+        term = term + (len(m2.group(1)) * '\\ ')
+    
+    return term
+    
+def get_epilog(menu=custom_search, parent=''):
+    global custom_search
+    
+    epilog = ''
+    
+    if parent == '':
+        epilog = 'Custom Searches:\n'
+        
+    for i, entry in enumerate(menu):
+        number = str(i + 1).rjust(2) if parent == '' else parent + str(i + 1)
+        
+        epilog += '%s%s%s) %s\n' % (((parent.count('.') + 1) * '\t'), '*' if 'untested' in entry else ' ', number, entry['help'])     
+
+        if 'children' in entry and len(entry['children']):
+            epilog += get_epilog(entry['children'], number + '.')
+    
+    if parent == '':
+        epilog += '\nStarred items have never been tested in an environment where they could be verified, so please let me know if they work.'
+        
+    return epilog
+
+def get_canned_search(option):
+    global custom_search
+    
+    return_data = {}
+    
+    if re.match('[0-9.]*[0-9]', args.search):
+        try:
+            if option.count('.') > 0:
+                option = [int(x) - 1 for x in option.split('.')]
+                level = custom_search
+                
+                for i,entry in enumerate(option):
+                    if i == (len(option) - 1):
+                        return_data = level[entry]
+                    else:
+                        level = level[entry]['children']
+                
+            else:
+                return_data = custom_search[int(option) - 1]
+        except:
+            pass
+        
+        if return_data != {}:
+            if 'options' in return_data and len(return_data['options']) > 0:
+                answers = []
+                
+                for option in return_data['options']:
+                    while True:
+                        answer = input('%s: ' % option['question'])
+                        
+                        if re.match(option['regex'], answer):
+                            answers.append(escape_ldap(answer))
+                            break
+
+                return_data['ldap'] = return_data['ldap'].format(*answers)
+                
+    return return_data
+                
+parser = argparse.ArgumentParser(description="AD LDAP Command Line Searching that doesn't suck.", epilog=get_epilog(), formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument('--domain', '-D', help='Domain')
 parser.add_argument('--user', '-U', help='Username')
 parser.add_argument('--password', '-P', help='Password')
@@ -60,6 +205,7 @@ parser.add_argument('--pagesize', '-p', help='Number of records to return on eac
 parser.add_argument('--delay', '-d', help='Millisecond delay between paging requests (Defaults to 0).', default=0, type=int)
 parser.add_argument('--format', '-f', help='Format of output (Default is "plain"), can be: plain, json. json_tiny', default='plain', choices=['plain', 'json', 'json_tiny'])
 parser.add_argument('--encryption', '-n', help="3) Connect to 636 TLS (Default); 2) Connect 389 No TLS, but attempt STARTTLS and fallback as needed; 1) Connect to 389, Force Plaintext", default=3, type=int, choices=[1, 2, 3]) 
+parser.add_argument('--advanced', '-a', help="Advanced way to pass options for canned searches that prompt for additional input (for multiple prompts, pass argument in the order of prompting)", nargs='*') 
 parser.add_argument('attributes', metavar='attribute', nargs='*', help='Attributes to return (defaults to all)')
 
 args = parser.parse_args()  
@@ -78,13 +224,18 @@ if args.encryption == 3:
 else:
     server = ldap3.Server(*servers, get_info=ldap3.ALL)
 
-if args.search.isdigit():
-    option = int(args.search)
-    if option > 0 and option <= len(custom_search):
-        args.search = custom_search[option - 1][0]
+if re.match('[0-9.]*[0-9]', args.search):
+    canned_option = get_canned_search(args.search)
+    
+    if canned_option == {}:
+        parser.print_help()
+        print((colorama.Fore.RED + '\n%s\n' + colorama.Style.RESET_ALL) % 'Error: You attempted to select a canned search option that is not valid.', file=sys.stderr)
+        exit(-1)
         
-        if len(custom_search[option - 1]) > 1 and args.attributes == []:
-            args.attributes = custom_search[option - 1][1:]
+        args.search = canned_option['ldap']
+        
+        if 'filter' in canned_option and len(canned_option['filter']) > 1 and args.attributes == []:
+            args.attributes = canned_option['filter']
 
 if len(args.attributes) > 0:
     args.attributes.append('cn')
