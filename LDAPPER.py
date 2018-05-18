@@ -63,7 +63,7 @@ custom_search = [
      'filter': ['dNSHostName', 'description', 'operatingSystem', 'operatingSystemServicePack', 'operatingSystemVersion', 'servicePrincipalName', 'lastLogonTimestamp'],
      'children': [
         {
-         'help': 'Get specific computer (You will be prompted for the group name)',
+         'help': 'Get specific computer (You will be prompted for the computer name)',
          'ldap': '(&(objectCategory=computer)(lastLogonTimestamp>=' + ldap_time_stamp(datetime.datetime.today() - datetime.timedelta(days=90)) + ')(|(CN={0})(dNSHostName={0})))', 
          'filter': ['dNSHostName', 'description', 'operatingSystem', 'operatingSystemServicePack', 'operatingSystemVersion', 'servicePrincipalName', 'lastLogonTimestamp'],
          'options': [

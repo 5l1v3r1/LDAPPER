@@ -83,7 +83,7 @@ Directions
               2.1) Get specific group (You will be prompted for the group name)
           3) Get all printers
           4) Get all computers
-              4.1) Get specific computer (You will be prompted for the group name)
+              4.1) Get specific computer (You will be prompted for the computer name)
           5) Get Domain/Enterprise Administrators
           6) Search for Unconstrained SPN Delegations (Potential Priv-Esc)
           7) Search for Accounts where PreAuth is not required. (ASREPROAST)
