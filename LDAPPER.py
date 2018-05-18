@@ -3,7 +3,7 @@
 
 from __future__ import print_function
 import ldap3, argparse, sys, yaml, re, json, time, colorama
-import datetime
+import datetime, socket
 
 #Python 2 hack to force utf8 encoding
 if sys.version_info[0] == 2:
@@ -118,6 +118,18 @@ custom_search = [
     }
 ]
 
+def derive_basedn(ip_host):
+    try:
+        if re.match(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$', ip_host): #TODO: IPv6
+            ip_host = socket.gethostbyaddr(ip_host)[0]
+        
+        if len(ip_host) == 0:
+            raise Exception("No Host")
+            
+        return 'dc=' + ',dc='.join(socket.getfqdn(ip_host).split('.')[1:])
+    except:
+        return ''
+    
 def escape_ldap(term):
     term = re.sub(r'([,#+><;"=])', r'\\\1', term.replace('\\', '\\\\'))
     
@@ -155,15 +167,15 @@ def get_epilog(menu=custom_search, parent=''):
         
     return epilog
 
-def get_canned_search(option):
+def get_canned_search(args):
     global custom_search
     
     return_data = {}
     
     if re.match('[0-9.]*[0-9]', args.search):
         try:
-            if option.count('.') > 0:
-                option = [int(x) - 1 for x in option.split('.')]
+            if args.search.count('.') > 0:
+                option = [int(x) - 1 for x in args.search.split('.')]
                 level = custom_search
                 
                 for i,entry in enumerate(option):
@@ -173,7 +185,7 @@ def get_canned_search(option):
                         level = level[entry]['children']
                 
             else:
-                return_data = custom_search[int(option) - 1]
+                return_data = custom_search[int(args.search) - 1]
         except:
             pass
         
@@ -181,7 +193,11 @@ def get_canned_search(option):
             if 'options' in return_data and len(return_data['options']) > 0:
                 answers = []
                 
-                for option in return_data['options']:
+                for i,option in enumerate(return_data['options']):
+                    if args.advanced and len(args.advanced) > i and re.match(option['regex'], args.advanced[i]):
+                        answers.append(escape_ldap(args.advanced[i]))
+                        continue
+                    
                     while True:
                         answer = input('%s: ' % option['question'])
                         
@@ -198,7 +214,7 @@ parser.add_argument('--domain', '-D', help='Domain')
 parser.add_argument('--user', '-U', help='Username')
 parser.add_argument('--password', '-P', help='Password')
 parser.add_argument('--server', '-S', help='DC IP or resolvable name (can be comma-delimited list for round-robin)')
-parser.add_argument('--basedn', '-b', help='Base DN should typically be "dc=", followed by the long domain name with periods replaced with ",dc="')
+parser.add_argument('--basedn', '-b', help='Base DN should typically be "dc=", followed by the long domain name with periods replaced with ",dc=". Will attempt to derive it if not provided, via DNS.', default='')
 parser.add_argument('--search', '-s', help='LDAP search string or number indicating custom search from "Custom Searches" list')
 parser.add_argument('--maxrecords', '-m', help='Maximum records to return (Default is 100), 0 means all.', default=100, type=int)
 parser.add_argument('--pagesize', '-p', help='Number of records to return on each pull (Default is 10).  Should be <= max records.', default=10, type=int)
@@ -214,6 +230,12 @@ if len(sys.argv) == 1:
     parser.print_help()
     exit(-1)
 
+if len(args.basedn) == 0:
+    args.server = derive_basedn(args.server)
+    
+    if len(args.basedn) == 0:
+        print((colorama.Fore.RED + '\n%s\n' + colorama.Style.RESET_ALL) % 'Error: You failed to provide a Base DN and we were unable to derive it from the server name.  Perhaps you don\'t have working DNS?.', file=sys.stderr)
+        exit(-1)
     
 ldap3.set_config_parameter('DEFAULT_ENCODING', 'utf-8')
     
@@ -225,7 +247,7 @@ else:
     server = ldap3.Server(*servers, get_info=ldap3.ALL)
 
 if re.match('[0-9.]*[0-9]', args.search):
-    canned_option = get_canned_search(args.search)
+    canned_option = get_canned_search(args)
     
     if canned_option == {}:
         parser.print_help()
