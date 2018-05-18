@@ -69,7 +69,7 @@ custom_search = [
          'options': [
             {
                 'question': 'Computer name to search for',
-                'regex': '([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)+'
+                'regex': '^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$'
             }
           ]
         }
@@ -123,11 +123,15 @@ def derive_basedn(ip_host):
         if re.match(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$', ip_host): #TODO: IPv6
             ip_host = socket.gethostbyaddr(ip_host)[0]
         
-        if len(ip_host) == 0:
-            raise Exception("No Host")
-            
-        return 'dc=' + ',dc='.join(socket.getfqdn(ip_host).split('.')[1:])
-    except:
+            if len(ip_host) == 0:
+                raise Exception("No Host")
+        
+        if ip_host.count('.') < 2:
+            ip_host = socket.getfqdn(ip_host)
+        
+        return 'dc=' + ',dc='.join(ip_host.split('.')[1:])
+        
+    except Exception as ex:
         return ''
     
 def escape_ldap(term):
@@ -172,7 +176,7 @@ def get_canned_search(args):
     
     return_data = {}
     
-    if re.match('[0-9.]*[0-9]', args.search):
+    if re.match('^[0-9.]*[0-9]$', args.search):
         try:
             if args.search.count('.') > 0:
                 option = [int(x) - 1 for x in args.search.split('.')]
@@ -240,22 +244,15 @@ if len(sys.argv) == 1:
     parser.print_help()
     exit(-1)
 
-if len(args.basedn) == 0:
-    args.server = derive_basedn(args.server)
-    
-    if len(args.basedn) == 0:
-        print((colorama.Fore.RED + '\n%s\n' + colorama.Style.RESET_ALL) % 'Error: You failed to provide a Base DN and we were unable to derive it from the server name.  Perhaps you don\'t have working DNS?.', file=sys.stderr)
-        exit(-1)
-    
 ldap3.set_config_parameter('DEFAULT_ENCODING', 'utf-8')
     
 servers = [server.strip() + (':636' if args.encryption == 3 else ':389') for server in args.server.split(',')]
 
 if len(args.basedn) == 0:
-    args.server = derive_basedn(args.server.strip().split(',').first())
+    args.basedn = derive_basedn(args.server.strip().split(',')[0])
     
     if len(args.basedn) == 0:
-        print((colorama.Fore.RED + '\n%s\n' + colorama.Style.RESET_ALL) % 'Error: You failed to provide a Base DN and we were unable to derive it from the server name.  Perhaps you don\'t have working DNS?.', file=sys.stderr)
+        print((colorama.Fore.RED + '\n%s\n' + colorama.Style.RESET_ALL) % 'Error: You failed to provide a Base DN and we were unable to derive it from the server name.  Perhaps you don\'t have working rDNS?.', file=sys.stderr)
         exit(-1)
 
 if args.encryption == 3:
@@ -271,10 +268,10 @@ if re.match('[0-9.]*[0-9]', args.search):
         print((colorama.Fore.RED + '\n%s\n' + colorama.Style.RESET_ALL) % 'Error: You attempted to select a canned search option that is not valid.', file=sys.stderr)
         exit(-1)
         
-        args.search = canned_option['ldap']
-        
-        if 'filter' in canned_option and len(canned_option['filter']) > 1 and args.attributes == []:
-            args.attributes = canned_option['filter']
+    args.search = canned_option['ldap']
+       
+    if 'filter' in canned_option and len(canned_option['filter']) > 1 and args.attributes == []:
+        args.attributes = canned_option['filter']
 
 if len(args.attributes) > 0:
     args.attributes.append('cn')
