@@ -208,14 +208,24 @@ def get_canned_search(args):
                 return_data['ldap'] = return_data['ldap'].format(*answers)
                 
     return return_data
-                
-parser = argparse.ArgumentParser(description="AD LDAP Command Line Searching that doesn't suck.", epilog=get_epilog(), formatter_class=argparse.RawTextHelpFormatter)
-parser.add_argument('--domain', '-D', help='Domain')
-parser.add_argument('--user', '-U', help='Username')
-parser.add_argument('--password', '-P', help='Password')
-parser.add_argument('--server', '-S', help='DC IP or resolvable name (can be comma-delimited list for round-robin)')
+
+class OverrideParser(argparse.ArgumentParser):
+    def error(self, message):
+        if "following arguments are required" in message:
+            self.print_help()
+            sys.exit(-1)
+        else:
+            sys.stderr.write('error: %s\n' % message)
+            self.print_help()
+            sys.exit(-1)
+
+parser = OverrideParser(description="AD LDAP Command Line Searching that doesn't suck.", epilog=get_epilog(), formatter_class=argparse.RawTextHelpFormatter)
+parser.add_argument('--domain', '-D', help='Domain', required=True)
+parser.add_argument('--user', '-U', help='Username', required=True)
+parser.add_argument('--password', '-P', help='Password', required=True)
+parser.add_argument('--server', '-S', help='DC IP or resolvable name (can be comma-delimited list for round-robin)', required=True)
 parser.add_argument('--basedn', '-b', help='Base DN should typically be "dc=", followed by the long domain name with periods replaced with ",dc=". Will attempt to derive it if not provided, via DNS.', default='')
-parser.add_argument('--search', '-s', help='LDAP search string or number indicating custom search from "Custom Searches" list')
+parser.add_argument('--search', '-s', help='LDAP search string or number indicating custom search from "Custom Searches" list', required=True)
 parser.add_argument('--maxrecords', '-m', help='Maximum records to return (Default is 100), 0 means all.', default=100, type=int)
 parser.add_argument('--pagesize', '-p', help='Number of records to return on each pull (Default is 10).  Should be <= max records.', default=10, type=int)
 parser.add_argument('--delay', '-d', help='Millisecond delay between paging requests (Defaults to 0).', default=0, type=int)
@@ -240,6 +250,13 @@ if len(args.basedn) == 0:
 ldap3.set_config_parameter('DEFAULT_ENCODING', 'utf-8')
     
 servers = [server.strip() + (':636' if args.encryption == 3 else ':389') for server in args.server.split(',')]
+
+if len(args.basedn) == 0:
+    args.server = derive_basedn(args.server.strip().split(',').first())
+    
+    if len(args.basedn) == 0:
+        print((colorama.Fore.RED + '\n%s\n' + colorama.Style.RESET_ALL) % 'Error: You failed to provide a Base DN and we were unable to derive it from the server name.  Perhaps you don\'t have working DNS?.', file=sys.stderr)
+        exit(-1)
 
 if args.encryption == 3:
     server = ldap3.Server(*servers, get_info=ldap3.ALL, use_ssl=True)
