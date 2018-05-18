@@ -102,6 +102,11 @@ custom_search = [
      'untested': True
     },
     {
+     'help': 'Search for common plaintext password attributes (UserPassword, UnixUserPassword, unicodePwd, and msSFU30Password)',
+     'ldap': '(|(UserPassword=*)(UnixUserPassword=*)(unicodePwd=*)(msSFU30Password=*))',
+     'untested': True
+    },
+    {
      'help': 'Show All Quest Two-Factor Seeds (if you have access)',
      'ldap': '(defender-tokenData=*)'
     }, 

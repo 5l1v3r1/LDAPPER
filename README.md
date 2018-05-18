@@ -37,7 +37,7 @@ Installation
 Directions
 ==========
     # python LDAPPER.py
-        usage: LDAPPER.py [-h] --domain DOMAIN --user USER --password PASSWORD
+    usage: LDAPPER.py [-h] --domain DOMAIN --user USER --password PASSWORD
                       --server SERVER [--basedn BASEDN] --search SEARCH
                       [--maxrecords MAXRECORDS] [--pagesize PAGESIZE]
                       [--delay DELAY] [--format {plain,json,json_tiny}]
@@ -89,9 +89,10 @@ Directions
           7) Search for Accounts where PreAuth is not required. (ASREPROAST)
           8) Search for User SPNs (KERBEROAST)
         * 9) Show All LAPS LA Passwords (that you can see)
-         10) Show All Quest Two-Factor Seeds (if you have access)
-         11) Oracle "orclCommonAttribute" SSO password hash
-        *12) Oracle "userPassword" SSO password hash
+        *10) Search for common plaintext password attributes (UserPassword, UnixUserPassword, unicodePwd, and msSFU30Password)
+         11) Show All Quest Two-Factor Seeds (if you have access)
+         12) Oracle "orclCommonAttribute" SSO password hash
+        *13) Oracle "userPassword" SSO password hash
 
     Starred items have never been tested in an environment where they could be verified, so please let me know if they work.
 
@@ -142,6 +143,8 @@ Unconstrained Delegation Abuse: http://www.harmj0y.net/blog/activedirectory/the-
 Oracle nonsense: https://blogs.oracle.com/mwilcox/entry/clarifying_ovd-ad_eus_password and http://onlineappsdba.com/index.php/2014/03/03/what-hashing-algorithm-oid-uses-to-store-user-password-ssha-or-md5/
 
 Qwest/Defender/Oneidentity 2nd Factor Token Data: http://support-public.cfm.quest.com/43565_Defender_5.9_AdminGuide.pdf
+
+Common plaintext passwords: https://www.blackhillsinfosec.com/domain-goodness-learned-love-ad-explorer/
 
 Future Plans
 ============
