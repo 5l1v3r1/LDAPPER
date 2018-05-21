@@ -81,6 +81,10 @@ custom_search = [
      'filter': ['member']
     },
     {
+     'help': 'Get Domain Trusts',
+     'ldap': '(objectClass=trustedDomain)'
+    },
+    {
      'help': 'Search for Unconstrained SPN Delegations (Potential Priv-Esc)',
      'ldap': '(userAccountControl:1.2.840.113556.1.4.803:=524288)',
      'filter': ['cn', 'servicePrincipalName']

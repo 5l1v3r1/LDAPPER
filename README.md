@@ -37,7 +37,7 @@ Installation
 Directions
 ==========
     # python LDAPPER.py
-    usage: LDAPPER.py [-h] --domain DOMAIN --user USER --password PASSWORD
+        usage: LDAPPER.py [-h] --domain DOMAIN --user USER --password PASSWORD
                       --server SERVER [--basedn BASEDN] --search SEARCH
                       [--maxrecords MAXRECORDS] [--pagesize PAGESIZE]
                       [--delay DELAY] [--format {plain,json,json_tiny}]
@@ -85,14 +85,15 @@ Directions
           4) Get all computers
               4.1) Get specific computer (You will be prompted for the computer name)
           5) Get Domain/Enterprise Administrators
-          6) Search for Unconstrained SPN Delegations (Potential Priv-Esc)
-          7) Search for Accounts where PreAuth is not required. (ASREPROAST)
-          8) Search for User SPNs (KERBEROAST)
-        * 9) Show All LAPS LA Passwords (that you can see)
-        *10) Search for common plaintext password attributes (UserPassword, UnixUserPassword, unicodePwd, and msSFU30Password)
-         11) Show All Quest Two-Factor Seeds (if you have access)
-         12) Oracle "orclCommonAttribute" SSO password hash
-        *13) Oracle "userPassword" SSO password hash
+          6) Get Domain Trusts
+          7) Search for Unconstrained SPN Delegations (Potential Priv-Esc)
+          8) Search for Accounts where PreAuth is not required. (ASREPROAST)
+          9) Search for User SPNs (KERBEROAST)
+        *10) Show All LAPS LA Passwords (that you can see)
+        *11) Search for common plaintext password attributes (UserPassword, UnixUserPassword, unicodePwd, and msSFU30Password)
+         12) Show All Quest Two-Factor Seeds (if you have access)
+         13) Oracle "orclCommonAttribute" SSO password hash
+        *14) Oracle "userPassword" SSO password hash
 
     Starred items have never been tested in an environment where they could be verified, so please let me know if they work.
 
