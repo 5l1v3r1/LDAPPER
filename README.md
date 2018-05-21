@@ -56,7 +56,7 @@ Directions
                             Domain
       --user USER, -U USER  Username
       --password PASSWORD, -P PASSWORD
-                            Password
+                            Password or LM:NTLM formatted hash
       --server SERVER, -S SERVER
                             DC IP or resolvable name (can be comma-delimited list for round-robin)
       --basedn BASEDN, -b BASEDN

@@ -248,7 +248,7 @@ class OverrideParser(argparse.ArgumentParser):
 parser = OverrideParser(description="AD LDAP Command Line Searching that doesn't suck.", epilog=get_epilog(), formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument('--domain', '-D', help='Domain', required=True)
 parser.add_argument('--user', '-U', help='Username', required=True)
-parser.add_argument('--password', '-P', help='Password', required=True)
+parser.add_argument('--password', '-P', help='Password or LM:NTLM formatted hash', required=True)
 parser.add_argument('--server', '-S', help='DC IP or resolvable name (can be comma-delimited list for round-robin)', required=True)
 parser.add_argument('--basedn', '-b', help='Base DN should typically be "dc=", followed by the long domain name with periods replaced with ",dc=". Will attempt to derive it if not provided, via DNS.', default='')
 parser.add_argument('--search', '-s', help='LDAP search string or number indicating custom search from "Custom Searches" list', required=True)
