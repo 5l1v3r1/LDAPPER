@@ -37,19 +37,19 @@ Installation
 Directions
 ==========
     # python LDAPPER.py
-        usage: LDAPPER.py [-h] --domain DOMAIN --user USER --password PASSWORD
+    usage: LDAPPER.py [-h] --domain DOMAIN --user USER --password PASSWORD
                       --server SERVER [--basedn BASEDN] --search SEARCH
                       [--maxrecords MAXRECORDS] [--pagesize PAGESIZE]
                       [--delay DELAY] [--format {plain,json,json_tiny}]
                       [--encryption {1,2,3}]
                       [--advanced [ADVANCED [ADVANCED ...]]]
                       [attribute [attribute ...]]
-
+    
     AD LDAP Command Line Searching that doesn't suck.
-
+    
     positional arguments:
       attribute             Attributes to return (defaults to all)
-
+    
     optional arguments:
       -h, --help            show this help message and exit
       --domain DOMAIN, -D DOMAIN
@@ -75,26 +75,27 @@ Directions
                             3) Connect to 636 TLS (Default); 2) Connect 389 No TLS, but attempt STARTTLS and fallback as needed; 1) Connect to 389, Force Plaintext
       --advanced [ADVANCED [ADVANCED ...]], -a [ADVANCED [ADVANCED ...]]
                             Advanced way to pass options for canned searches that prompt for additional input (for multiple prompts, pass argument in the order of prompting)
-
+    
     Custom Searches:
-          1) Get all users
-              1.1) Get specific user (You will be prompted for the username)
-          2) Get all groups (and their members)
-              2.1) Get specific group (You will be prompted for the group name)
-          3) Get all printers
-          4) Get all computers
-              4.1) Get specific computer (You will be prompted for the computer name)
-          5) Get Domain/Enterprise Administrators
-          6) Get Domain Trusts
-          7) Search for Unconstrained SPN Delegations (Potential Priv-Esc)
-          8) Search for Accounts where PreAuth is not required. (ASREPROAST)
-          9) Search for User SPNs (KERBEROAST)
-        *10) Show All LAPS LA Passwords (that you can see)
-        *11) Search for common plaintext password attributes (UserPassword, UnixUserPassword, unicodePwd, and msSFU30Password)
-         12) Show All Quest Two-Factor Seeds (if you have access)
-         13) Oracle "orclCommonAttribute" SSO password hash
-        *14) Oracle "userPassword" SSO password hash
-
+    	  1) Get all users
+    		  1.1) Get specific user (You will be prompted for the username)
+    	  2) Get all groups (and their members)
+    		  2.1) Get specific group (You will be prompted for the group name)
+    	  3) Get all printers
+    	  4) Get all computers
+    		  4.1) Get specific computer (You will be prompted for the computer name)
+    	  5) Get Domain/Enterprise Administrators
+    	  6) Get Domain Trusts
+    	  7) Search for Unconstrained SPN Delegations (Potential Priv-Esc)
+    	  8) Search for Accounts where PreAuth is not required. (ASREPROAST)
+    	  9) Search for User SPNs (KERBEROAST)
+    		  9.1) Search for specific User SPN (You will be prompted for the User Principle Name)
+    	*10) Show All LAPS LA Passwords (that you can see)
+    	*11) Search for common plaintext password attributes (UserPassword, UnixUserPassword, unicodePwd, and msSFU30Password)
+    	 12) Show All Quest Two-Factor Seeds (if you have access)
+    	 13) Oracle "orclCommonAttribute" SSO password hash
+    	*14) Oracle "userPassword" SSO password hash
+    
     Starred items have never been tested in an environment where they could be verified, so please let me know if they work.
 
 Example

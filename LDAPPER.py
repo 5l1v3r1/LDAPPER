@@ -96,8 +96,21 @@ custom_search = [
     },
     {
      'help': 'Search for User SPNs (KERBEROAST)',
-     'ldap': '(&(objectcategory=user)(serviceprincipalname=*))',
-     'filter': ['userPrincipalName', 'servicePrincipalName']
+     'ldap': '(&(servicePrincipalName=*)(UserAccountControl:1.2.840.113556.1.4.803:=512)(!(UserAccountControl:1.2.840.113556.1.4.803:=2))(!(objectCategory=computer)))',
+     'filter': ['userPrincipalName', 'servicePrincipalName'],
+     'children': [
+        {
+         'help': 'Search for specific User SPN (You will be prompted for the User Principle Name)',
+         'ldap': '(&(servicePrincipalName=*)(UserAccountControl:1.2.840.113556.1.4.803:=512)(!(UserAccountControl:1.2.840.113556.1.4.803:=2))(!(objectCategory=computer))(userPrincipalName={0}))', 
+         'filter': ['userPrincipalName', 'servicePrincipalName'],
+         'options': [
+            {
+                'question': 'User Principle Name to search for',
+                'regex': '.+'
+            }
+          ]
+        }
+     ]     
     },
     {
      'help': 'Show All LAPS LA Passwords (that you can see)',
