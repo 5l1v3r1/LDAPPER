@@ -3,7 +3,7 @@
 
 from __future__ import print_function
 import ldap3, argparse, sys, yaml, re, json, time, colorama
-import datetime, socket
+import datetime
 
 #Python 2 hack to force utf8 encoding
 if sys.version_info[0] == 2:
@@ -151,22 +151,6 @@ custom_search = [
      'untested': True
     }
 ]
-
-def derive_basedn(ip_host):
-    try:
-        if re.match(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$', ip_host): #TODO: IPv6
-            ip_host = socket.gethostbyaddr(ip_host)[0]
-        
-            if len(ip_host) == 0:
-                raise Exception("No Host")
-        
-        if ip_host.count('.') < 2:
-            ip_host = socket.getfqdn(ip_host)
-        
-        return 'dc=' + ',dc='.join(ip_host.split('.')[1:])
-        
-    except Exception as ex:
-        return ''
     
 def escape_ldap(term):
     term = re.sub(r'([,#+><;"=])', r'\\\1', term.replace('\\', '\\\\'))
@@ -262,7 +246,7 @@ parser.add_argument('--domain', '-D', help='Domain', required=True)
 parser.add_argument('--user', '-U', help='Username', required=True)
 parser.add_argument('--password', '-P', help='Password or LM:NTLM formatted hash', required=True)
 parser.add_argument('--server', '-S', help='DC IP or resolvable name (can be comma-delimited list for round-robin)', required=True)
-parser.add_argument('--basedn', '-b', help='Base DN should typically be "dc=", followed by the long domain name with periods replaced with ",dc=". Will attempt to derive it if not provided, via DNS.', default='')
+parser.add_argument('--basedn', '-b', help='Base DN should typically be "dc=", followed by the long domain name with periods replaced with ",dc=". Will attempt to derive it if not provided from the LDAP server.', default='')
 parser.add_argument('--search', '-s', help='LDAP search string or number indicating custom search from "Custom Searches" list', required=True)
 parser.add_argument('--maxrecords', '-m', help='Maximum records to return (Default is 100), 0 means all.', default=100, type=int)
 parser.add_argument('--pagesize', '-p', help='Number of records to return on each pull (Default is 10).  Should be <= max records.', default=10, type=int)
@@ -280,19 +264,16 @@ if len(sys.argv) == 1:
 
 ldap3.set_config_parameter('DEFAULT_ENCODING', 'utf-8')
     
-servers = [server.strip() + (':636' if args.encryption == 3 else ':389') for server in args.server.split(',')]
+servers = [server.strip() for server in args.server.split(',')]
 
-if len(args.basedn) == 0:
-    args.basedn = derive_basedn(args.server.strip().split(',')[0])
-    
-    if len(args.basedn) == 0:
-        print((colorama.Fore.RED + '\n%s\n' + colorama.Style.RESET_ALL) % 'Error: You failed to provide a Base DN and we were unable to derive it from the server name.  Perhaps you don\'t have working rDNS?.', file=sys.stderr)
-        exit(-1)
+server_pool = ldap3.ServerPool(None, ldap3.POOLING_STRATEGY_ROUND_ROBIN_ACTIVE, active=True, exhaust=True)
 
 if args.encryption == 3:
-    server = ldap3.Server(*servers, get_info=ldap3.ALL, use_ssl=True)
+    for server in servers:
+        server_pool.add(ldap3.Server(server.strip(), port=636, get_info=ldap3.ALL, use_ssl=True))
 else:
-    server = ldap3.Server(*servers, get_info=ldap3.ALL)
+    for server in servers:
+        server_pool.add(ldap3.Server(server.strip(), port=389, get_info=ldap3.ALL))
 
 if re.match('[0-9.]*[0-9]', args.search):
     canned_option = get_canned_search(args)
@@ -312,7 +293,8 @@ if len(args.attributes) > 0:
     args.attributes = set(map(str.lower, args.attributes))
 
 
-with ldap3.Connection(server, user=r'%s\%s' % (args.domain, args.user), password=args.password, authentication=ldap3.NTLM, read_only=True) as conn:
+
+with ldap3.Connection(server_pool, user=r'%s\%s' % (args.domain, args.user), password=args.password, authentication=ldap3.NTLM, read_only=True) as conn:
     if args.encryption == 2:
         try:
             conn.start_tls()
@@ -321,6 +303,10 @@ with ldap3.Connection(server, user=r'%s\%s' % (args.domain, args.user), password
  
     if not conn.bind():
         print((colorama.Fore.RED + '\n%s\n' + colorama.Style.RESET_ALL) %'ERROR: An error occurred while attempting to connect to the server(s).  If the ip(s) are correct, your credentials are likely invald', file=sys.stderr)
+        exit(-1)
+    
+    if len(args.basedn) == 0:
+        print(server_pool.to_json['naming_context'][0])
         exit(-1)
     
     i = 0
