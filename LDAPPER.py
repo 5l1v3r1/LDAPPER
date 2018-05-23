@@ -254,7 +254,7 @@ parser.add_argument('--delay', '-d', help='Millisecond delay between paging requ
 parser.add_argument('--format', '-f', help='Format of output (Default is "plain"), can be: plain, json. json_tiny', default='plain', choices=['plain', 'json', 'json_tiny'])
 parser.add_argument('--encryption', '-n', help="3) Connect to 636 TLS (Default); 2) Connect 389 No TLS, but attempt STARTTLS and fallback as needed; 1) Connect to 389, Force Plaintext", default=3, type=int, choices=[1, 2, 3]) 
 parser.add_argument('--advanced', '-a', help="Advanced way to pass options for canned searches that prompt for additional input (for multiple prompts, pass argument in the order of prompting)", nargs='*') 
-parser.add_argument('attributes', metavar='attribute', nargs='*', help='Attributes to return (defaults to all)')
+parser.add_argument('attributes', metavar='attribute', nargs='*', help='Attributes to return (Defaults to all for custom query.  For canned queries, pass a "*" to get all attributes instead of default ones.)')
 
 args = parser.parse_args()  
 
@@ -289,8 +289,11 @@ if re.match('[0-9.]*[0-9]', args.search):
         args.attributes = canned_option['filter']
 
 if len(args.attributes) > 0:
-    args.attributes.append('cn')
-    args.attributes = set(map(str.lower, args.attributes))
+    if len(args.attributes) == 1 and args.attributes[0].strip() == '*':
+        args.attributes = []
+    else:
+        args.attributes.append('cn')
+        args.attributes = set(map(str.lower, args.attributes))
 
 with ldap3.Connection(server_pool, user=r'%s\%s' % (args.domain, args.user), password=args.password, authentication=ldap3.NTLM, read_only=True) as conn:
     if args.encryption == 2:
