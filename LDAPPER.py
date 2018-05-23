@@ -115,8 +115,20 @@ custom_search = [
     {
      'help': 'Show All LAPS LA Passwords (that you can see)',
      'ldap': '(ms-Mcs-AdmPwd=*)',
-     'filter': ['ms-Mcs-AdmPwd', 'ms-Mcs-AdmPwdExpirationTime'],
-     'untested': True
+     'filter': ['ms-Mcs-AdmPwd', 'ms-Mcs-AdmPwdExpirationTime', 'dNSHostName'],
+     'children': [
+        {
+         'help': 'Search for specific Workstation LAPS Password (You will be prompted for the Workstation Name)',
+         'ldap': '(&(ms-Mcs-AdmPwd=*)(|(CN={0})(dNSHostName={0})))', 
+         'filter': ['ms-Mcs-AdmPwd', 'ms-Mcs-AdmPwdExpirationTime', 'dNSHostName'],
+         'options': [
+            {
+                'question': 'Workstation to search for',
+                'regex': '^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$'
+            }
+          ]
+        }
+     ]
     },
     {
      'help': 'Search for common plaintext password attributes (UserPassword, UnixUserPassword, unicodePwd, and msSFU30Password)',
