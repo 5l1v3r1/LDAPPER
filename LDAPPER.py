@@ -266,7 +266,7 @@ ldap3.set_config_parameter('DEFAULT_ENCODING', 'utf-8')
     
 servers = [server.strip() for server in args.server.split(',')]
 
-server_pool = ldap3.ServerPool(None, ldap3.POOLING_STRATEGY_ROUND_ROBIN_ACTIVE, active=True, exhaust=True)
+server_pool = ldap3.ServerPool(None, ldap3.ROUND_ROBIN, active=True, exhaust=True)
 
 if args.encryption == 3:
     for server in servers:
@@ -292,8 +292,6 @@ if len(args.attributes) > 0:
     args.attributes.append('cn')
     args.attributes = set(map(str.lower, args.attributes))
 
-
-
 with ldap3.Connection(server_pool, user=r'%s\%s' % (args.domain, args.user), password=args.password, authentication=ldap3.NTLM, read_only=True) as conn:
     if args.encryption == 2:
         try:
@@ -306,8 +304,14 @@ with ldap3.Connection(server_pool, user=r'%s\%s' % (args.domain, args.user), pas
         exit(-1)
     
     if len(args.basedn) == 0:
-        print(server_pool.to_json['naming_context'][0])
-        exit(-1)
+        try:
+            args.basedn = vars(conn.server.info)['other']['defaultNamingContext'][0]
+        
+            if len(args.basedn) == 0:
+                raise Exception('Bad BaseDN')
+        except:
+            print((colorama.Fore.RED + '\n%s\n' + colorama.Style.RESET_ALL) % 'Error: You failed to provide a Base DN and we were unable to derive it.', file=sys.stderr)
+            exit(-1)
     
     i = 0
     
