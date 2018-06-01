@@ -9,7 +9,7 @@ LDAP record paging and works around other AD bugs to allow an arbitrary numbers
 of records to be retrieved.
 
 2) Inability to use NTLM credentials in an intuitive fashion to authenticate.
-While you still have to provide the baseDN, you can provide the NETBIOS domain
+~~While you still have to provide the baseDN~~(no longer necessary), you can provide the NETBIOS domain
 name, username, and password to authenticate to a Windows DC.
 
 3) Inability to precisely control the number of returned records, the speed at 
@@ -111,27 +111,27 @@ For the purposes of these examples, assume the following:
     
 Retrieve all records return only the cn attribute:
 
-    python LDAPPER.py -D 'EMP' -U 'bob' -P 'password' -S '10.0.0.2,10.0.0.3' -b 'DC=EXAMPLE,DC=LOCAL' -m 0  -s '(cn=*)' cn
+    python LDAPPER.py -D 'EMP' -U 'bob' -P 'password' -S '10.0.0.2,10.0.0.3' -m 0  -s '(cn=*)' cn
 
 Retrieve details about a specific user (will be prompted for username):
 
-    python LDAPPER.py -D 'EMP' -U 'bob' -P 'password' -S '10.0.0.2,10.0.0.3' -b 'DC=EXAMPLE,DC=LOCAL' -m 0  -s '1.1'
+    python LDAPPER.py -D 'EMP' -U 'bob' -P 'password' -S '10.0.0.2,10.0.0.3' -m 0  -s '1.1'
     
 Retrieve details about a specific user (pass username so you don't get prompted):
 
-    python LDAPPER.py -D 'EMP' -U 'bob' -P 'password' -S '10.0.0.2,10.0.0.3' -b 'DC=EXAMPLE,DC=LOCAL' -m 0  -s '1.1' -a 'alice'
+    python LDAPPER.py -D 'EMP' -U 'bob' -P 'password' -S '10.0.0.2,10.0.0.3' -m 0  -s '1.1' -a 'alice'
 
 Retrieve top 100 user Kerberos SPNs, no more than five at a time, with two seconds between each page request in compact JSON form:
 
-    python LDAPPER.py -D 'EMP' -U 'bob' -P 'password' -S '10.0.0.2,10.0.0.3' -b 'DC=EXAMPLE,DC=LOCAL' -m 100 -p 5 -d 2000 -f json_tiny -s '(&(objectcategory=user)(serviceprincipalname=*))' serviceprincipalname userprincipalname
+    python LDAPPER.py -D 'EMP' -U 'bob' -P 'password' -S '10.0.0.2,10.0.0.3' -m 100 -p 5 -d 2000 -f json_tiny -s '(&(objectcategory=user)(serviceprincipalname=*))' serviceprincipalname userprincipalname
     
 Manually retrieve all records for printers and show all related attributes:
 
-    python LDAPPER.py -D 'EMP' -U 'bob' -P 'password' -S '10.0.0.2,10.0.0.3' -b 'DC=EXAMPLE,DC=LOCAL' -m 0  -s '(objectClass=printQueue)'
+    python LDAPPER.py -D 'EMP' -U 'bob' -P 'password' -S '10.0.0.2,10.0.0.3' -m 0  -s '(objectClass=printQueue)'
 
 Search for Unconstrained SPN Delegations with no effort:
 
-    python LDAPPER.py -D 'EMP' -U 'bob' -P 'password' -S '10.0.0.2,10.0.0.3' -b 'DC=EXAMPLE,DC=LOCAL' -m 0  -s 4
+    python LDAPPER.py -D 'EMP' -U 'bob' -P 'password' -S '10.0.0.2,10.0.0.3' -m 0  -s 4
 
 References
 ==========
