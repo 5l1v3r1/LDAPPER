@@ -6,11 +6,6 @@ from __future__ import print_function
 import ldap3, argparse, sys, os, yaml, re, json, time, colorama
 import datetime
 
-#Python 2 deprecated
-#if sys.version_info[0] == 2:
-#    print("This tool only works with Python 3+")
-#    exit(-1)
-
 #Python 2 hack to force utf8 encoding
 if sys.version_info[0] == 2:
     reload(sys)
@@ -275,9 +270,6 @@ if args.search == '-':
     
     args.search = sys.stdin.read()
 
-if args.search[0] != '(' and args.search[-1] != ')':
-    args.search = '(%s)' % args.search
-
 ldap3.set_config_parameter('DEFAULT_ENCODING', 'utf-8')
     
 servers = [server.strip() for server in args.server.split(',')]
@@ -303,6 +295,9 @@ if re.match('[0-9.]*[0-9]', args.search):
        
     if 'filter' in canned_option and len(canned_option['filter']) > 1 and args.attributes == []:
         args.attributes = canned_option['filter']
+else:
+    if args.search[0] != '(' and args.search[-1] != ')':
+        args.search = '(%s)' % args.search
 
 if len(args.attributes) > 0:
     if len(args.attributes) == 1 and args.attributes[0].strip() == '*':
