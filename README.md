@@ -9,8 +9,7 @@ LDAP record paging and works around other AD bugs to allow an arbitrary numbers
 of records to be retrieved.
 
 2) Inability to use NTLM credentials in an intuitive fashion to authenticate.
-~~While you still have to provide the baseDN~~(no longer necessary), you can provide the NETBIOS domain
-name, username, and password to authenticate to a Windows DC.
+You can provide the NETBIOS domain name, username, and password to authenticate to a Windows DC.
 
 3) Inability to precisely control the number of returned records, the speed at 
 which they are returned, and the number of records pulled at a time. This tool
@@ -62,7 +61,7 @@ Directions
       --basedn BASEDN, -b BASEDN
                             Base DN should typically be "dc=", followed by the long domain name with periods replaced with ",dc=". Will attempt to derive it if not provided, via DNS.
       --search SEARCH, -s SEARCH
-                            LDAP search string or number indicating custom search from "Custom Searches" list
+                            LDAP search string or number indicating custom search from "Custom Searches" list.  Use "-" for read from stdin.
       --maxrecords MAXRECORDS, -m MAXRECORDS
                             Maximum records to return (Default is 100), 0 means all.
       --pagesize PAGESIZE, -p PAGESIZE
@@ -147,6 +146,18 @@ Oracle nonsense: https://blogs.oracle.com/mwilcox/entry/clarifying_ovd-ad_eus_pa
 Qwest/Defender/Oneidentity 2nd Factor Token Data: http://support-public.cfm.quest.com/43565_Defender_5.9_AdminGuide.pdf
 
 Common plaintext passwords: https://www.blackhillsinfosec.com/domain-goodness-learned-love-ad-explorer/
+
+Change Log
+==========
+
+Version 1.3
+-----------
+
+1) Added the ability to take LDAP Query from stdin.
+
+2) Automatically wrap query in brackets if the user did not already do that.
+
+3) Fixed Python 2 Support Bug.
 
 Future Plans
 ============

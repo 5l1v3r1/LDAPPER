@@ -1,9 +1,15 @@
- #!/usr/bin/env python3
- # -*- coding: utf-8 -*-
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Version 1.3 
 
 from __future__ import print_function
-import ldap3, argparse, sys, yaml, re, json, time, colorama
+import ldap3, argparse, sys, os, yaml, re, json, time, colorama
 import datetime
+
+#Python 2 deprecated
+#if sys.version_info[0] == 2:
+#    print("This tool only works with Python 3+")
+#    exit(-1)
 
 #Python 2 hack to force utf8 encoding
 if sys.version_info[0] == 2:
@@ -247,7 +253,7 @@ parser.add_argument('--user', '-U', help='Username', required=True)
 parser.add_argument('--password', '-P', help='Password or LM:NTLM formatted hash', required=True)
 parser.add_argument('--server', '-S', help='DC IP or resolvable name (can be comma-delimited list for round-robin)', required=True)
 parser.add_argument('--basedn', '-b', help='Base DN should typically be "dc=", followed by the long domain name with periods replaced with ",dc=". Will attempt to derive it if not provided from the LDAP server.', default='')
-parser.add_argument('--search', '-s', help='LDAP search string or number indicating custom search from "Custom Searches" list', required=True)
+parser.add_argument('--search', '-s', help='LDAP search string or number indicating custom search from "Custom Searches" list.  Use "-" for read from stdin.', required=True)
 parser.add_argument('--maxrecords', '-m', help='Maximum records to return (Default is 100), 0 means all.', default=100, type=int)
 parser.add_argument('--pagesize', '-p', help='Number of records to return on each pull (Default is 10).  Should be <= max records.', default=10, type=int)
 parser.add_argument('--delay', '-d', help='Millisecond delay between paging requests (Defaults to 0).', default=0, type=int)
@@ -261,6 +267,16 @@ args = parser.parse_args()
 if len(sys.argv) == 1:
     parser.print_help()
     exit(-1)
+
+if args.search == '-':
+    if os.isatty(0):
+        parser.print_help()
+        exit(-1)
+    
+    args.search = sys.stdin.read()
+
+if args.search[0] != '(' and args.search[-1] != ')':
+    args.search = '(%s)' % args.search
 
 ldap3.set_config_parameter('DEFAULT_ENCODING', 'utf-8')
     
@@ -382,4 +398,4 @@ with ldap3.Connection(server_pool, user=r'%s\%s' % (args.domain, args.user), pas
 if i == 0:
     print((colorama.Fore.YELLOW + '\n%s\n' + colorama.Style.RESET_ALL) % 'NOTICE: No results were returned for your query', file=sys.stderr)
 elif args.format in ['json', 'json_tiny']:
-    print("]", end='', flush=True)
+    sys.stdout.write(']')
